@@ -3,12 +3,24 @@ import inspect
 import logging
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from app.config import ACCEPTED, BAN_LAST_USER, DB_REQUEST_LIMIT_ON_CHECKING, DEFAULT_LIMIT, IUL, STL
+from app.config import (
+    ACCEPTED,
+    BAN_ENABLED,
+    BAN_LAST_USER,
+    DB_REQUEST_LIMIT_ON_CHECKING,
+    DEFAULT_LIMIT,
+    IUL,
+    STL,
+)
 from app.db.models import ExceptedIP, UserLimit
 from app.models.user import User
 from app.nobetnode import nodes
 from app.db import excepted_ips
-from app.notification.telegram import send_notification_with_reply_markup
+from app.notification.telegram import (
+    send_notification,
+    send_notification_with_reply_markup,
+)
+from app.notification.webhook import send_webhook
 from app.storage.base import BaseStorage
 from app.db.db_base import DBBase
 
@@ -41,8 +53,9 @@ class CheckService:
         self._storage.add_user(user)
 
         users = self._storage.get_users(user.name)
+        active_connections = len(users)
 
-        if len(users) > user_limit and user.ip not in self._in_process_ips:
+        if active_connections > user_limit and user.ip not in self._in_process_ips:
             userByEmail = self._storage.get_user(user.name)
             userLast = self._storage.get_last_user(user.name)
 
@@ -74,18 +87,58 @@ class CheckService:
 
             self._in_process_ips.append(userByEmail.ip)
 
-            await self.ban_user(userLast if BAN_LAST_USER else userByEmail)
+            user_to_notify = userLast if BAN_LAST_USER else userByEmail
+            await send_webhook(
+                {
+                    "username": user_to_notify.name,
+                    "active_connections": active_connections,
+                }
+            )
+
+            if BAN_ENABLED:
+                await self.ban_user(user_to_notify)
 
             self._in_process_ips.remove(userByEmail.ip)
 
             self._storage.delete_user(userByEmail.name, userByEmail.ip)
 
-            log_message = 'banned user ' + userByEmail.name+" with ip " + userByEmail.ip + \
-                '\nnode: '+userByEmail.node + "\ninbound: "+userByEmail.inbound
+            if BAN_ENABLED:
+                log_message = (
+                    "banned user "
+                    + userByEmail.name
+                    + " with ip "
+                    + userByEmail.ip
+                    + "\nnode: "
+                    + userByEmail.node
+                    + "\ninbound: "
+                    + userByEmail.inbound
+                    + f"\nactive connections: {active_connections}"
+                )
+            else:
+                log_message = (
+                    "limit exceeded for user "
+                    + userByEmail.name
+                    + " with ip "
+                    + userByEmail.ip
+                    + "\nnode: "
+                    + userByEmail.node
+                    + "\ninbound: "
+                    + userByEmail.inbound
+                    + f"\nactive connections: {active_connections}"
+                    + "\nwebhook sent"
+                )
             if ACCEPTED:
                 log_message += '\naccepted: '+userByEmail.accepted
             logger.info(log_message)
-            await send_notification_with_reply_markup(log_message, InlineKeyboardMarkup([[InlineKeyboardButton("Unban IP", callback_data=userByEmail.ip)]]))
+            if BAN_ENABLED:
+                await send_notification_with_reply_markup(
+                    log_message,
+                    InlineKeyboardMarkup(
+                        [[InlineKeyboardButton("Unban IP", callback_data=userByEmail.ip)]]
+                    ),
+                )
+            else:
+                await send_notification(log_message)
 
     async def ban_user(self, user: User):
         for node in nodes.keys():

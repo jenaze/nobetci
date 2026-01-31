@@ -38,6 +38,11 @@ BAN_INTERVAL = config("BAN_INTERVAL", cast=int, default=300)
 STL = config("STL", cast=int, default=10)
 IUL = config("IUL", cast=int, default=50)
 BAN_LAST_USER = config("BAN_LAST_USER", cast=bool, default=False)
+BAN_ENABLED = config("BAN_ENABLED", cast=bool, default=True)
+
+WEBHOOK_ADDRESS = config("WEBHOOK_ADDRESS", default=None)
+WEBHOOK_SECRET = config("WEBHOOK_SECRET", default=None)
+WEBHOOK_TIMEOUT = config("WEBHOOK_TIMEOUT", cast=int, default=10)
 
 API_USERNAME = config("API_USERNAME", default=None)
 API_PASSWORD = config("API_PASSWORD", default=None)
