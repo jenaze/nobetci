@@ -1,7 +1,7 @@
 import logging
 import ssl
 from ssl import SSLError
-from app.config import PANEL_CUSTOM_NODES, PANEL_NODE_RESET
+from app.config import PANEL_CUSTOM_NODES, PANEL_EXCLUDE_NODES, PANEL_NODE_RESET
 from app.models.marznode import MarzNode
 from app.models.panel import Panel
 from app.notification.telegram import send_notification
@@ -85,6 +85,12 @@ class MarzNodeService:
                 if PANEL_CUSTOM_NODES:
                     marznodes = [
                         m for m in marznodes if m.name in PANEL_CUSTOM_NODES]
+                if PANEL_EXCLUDE_NODES:
+                    marznodes = [
+                        m
+                        for m in marznodes
+                        if m.name not in PANEL_EXCLUDE_NODES
+                    ]
                 for marznode in marznodes:
                     asyncio.create_task(
                         self.create_node_task(panel_data, tg, marznode))

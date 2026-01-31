@@ -1,7 +1,7 @@
 import logging
 import ssl
 from ssl import SSLError
-from app.config import PANEL_CUSTOM_NODES, PANEL_NODE_RESET
+from app.config import PANEL_CUSTOM_NODES, PANEL_EXCLUDE_NODES, PANEL_NODE_RESET
 from app.models.marzban_node import MarzbanNode
 from app.models.panel import Panel
 from app.notification.telegram import send_notification
@@ -129,13 +129,21 @@ class MarzbanService:
                     task.cancel()
                     tasks.remove(task)
 
-                (not PANEL_CUSTOM_NODES or 'core' in PANEL_CUSTOM_NODES) and asyncio.create_task(
-                    self.create_core_task(panel_data, tg))
+                if (not PANEL_CUSTOM_NODES or "core" in PANEL_CUSTOM_NODES) and (
+                    not PANEL_EXCLUDE_NODES or "core" not in PANEL_EXCLUDE_NODES
+                ):
+                    asyncio.create_task(self.create_core_task(panel_data, tg))
 
                 marzban_nodes = await get_marzban_nodes(panel_data)
                 if PANEL_CUSTOM_NODES:
                     marzban_nodes = [
                         m for m in marzban_nodes if m.name in PANEL_CUSTOM_NODES]
+                if PANEL_EXCLUDE_NODES:
+                    marzban_nodes = [
+                        m
+                        for m in marzban_nodes
+                        if m.name not in PANEL_EXCLUDE_NODES
+                    ]
                 for marzban_node in marzban_nodes:
                     asyncio.create_task(self.create_node_task(
                         panel_data, tg, marzban_node))
