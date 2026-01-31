@@ -3,7 +3,7 @@ import ssl
 from ssl import SSLError
 
 import httpx
-from app.config import PANEL_CUSTOM_NODES, PANEL_NODE_RESET
+from app.config import PANEL_CUSTOM_NODES, PANEL_EXCLUDE_NODES, PANEL_NODE_RESET
 from app.models.pg_node import PGNode
 from app.models.panel import Panel
 from app.notification.telegram import send_notification
@@ -101,6 +101,10 @@ class PGNodeService:
                 if PANEL_CUSTOM_NODES:
                     pg_nodes = [
                         m for m in pg_nodes if m.name in PANEL_CUSTOM_NODES]
+                if PANEL_EXCLUDE_NODES:
+                    pg_nodes = [
+                        m for m in pg_nodes if m.name not in PANEL_EXCLUDE_NODES
+                    ]
                 for pg_node in pg_nodes:
                     asyncio.create_task(
                         self.create_node_task(panel_data, tg, pg_node))

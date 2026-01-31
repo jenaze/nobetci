@@ -1,6 +1,12 @@
 import asyncio
 import logging
-from app.config import PANEL_ADDRESS, PANEL_CUSTOM_NODES, PANEL_PASSWORD, PANEL_USERNAME
+from app.config import (
+    PANEL_ADDRESS,
+    PANEL_CUSTOM_NODES,
+    PANEL_EXCLUDE_NODES,
+    PANEL_PASSWORD,
+    PANEL_USERNAME,
+)
 from app.models.panel import Panel
 from app.service.check_service import CheckService
 from app.service.marzban_service import MarzbanService
@@ -29,9 +35,15 @@ async def start_marzban_node_tasks():
     if PANEL_CUSTOM_NODES:
         marzban_nodes = [
             m for m in marzban_nodes if m.name in PANEL_CUSTOM_NODES]
+    if PANEL_EXCLUDE_NODES:
+        marzban_nodes = [
+            m for m in marzban_nodes if m.name not in PANEL_EXCLUDE_NODES]
 
     async with asyncio.TaskGroup() as tg:
-        (not PANEL_CUSTOM_NODES or 'core' in PANEL_CUSTOM_NODES) and await node_service.create_core_task(paneltype, tg)
+        if (not PANEL_CUSTOM_NODES or "core" in PANEL_CUSTOM_NODES) and (
+            not PANEL_EXCLUDE_NODES or "core" not in PANEL_EXCLUDE_NODES
+        ):
+            await node_service.create_core_task(paneltype, tg)
 
         for marzban_node in marzban_nodes:
             await node_service.create_node_task(paneltype, tg, marzban_node)

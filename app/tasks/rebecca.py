@@ -1,6 +1,13 @@
 import asyncio
 import logging
-from app.config import PANEL_ADDRESS, PANEL_CUSTOM_NODES, PANEL_PASSWORD, PANEL_USERNAME, SYNC_WITH_PANEL
+from app.config import (
+    PANEL_ADDRESS,
+    PANEL_CUSTOM_NODES,
+    PANEL_EXCLUDE_NODES,
+    PANEL_PASSWORD,
+    PANEL_USERNAME,
+    SYNC_WITH_PANEL,
+)
 from app.db.rebecca_db import RebeccaDB
 from app.models.node import NodeStatus
 from app.models.panel import Panel
@@ -29,6 +36,9 @@ async def start_rebecca_node_tasks():
     if PANEL_CUSTOM_NODES:
         rebecca_nodes = [
             m for m in rebecca_nodes if m.name in PANEL_CUSTOM_NODES]
+    if PANEL_EXCLUDE_NODES:
+        rebecca_nodes = [
+            m for m in rebecca_nodes if m.name not in PANEL_EXCLUDE_NODES]
 
     await nodes_startup(node_db.get_all(True) + (SYNC_WITH_PANEL and [models.Node(**{
         "id": 1000 + n.id,
@@ -40,7 +50,10 @@ async def start_rebecca_node_tasks():
     }) for n in rebecca_nodes] or []))
 
     async with asyncio.TaskGroup() as tg:
-        (not PANEL_CUSTOM_NODES or 'core' in PANEL_CUSTOM_NODES) and await node_service.create_core_task(paneltype, tg)
+        if (not PANEL_CUSTOM_NODES or "core" in PANEL_CUSTOM_NODES) and (
+            not PANEL_EXCLUDE_NODES or "core" not in PANEL_EXCLUDE_NODES
+        ):
+            await node_service.create_core_task(paneltype, tg)
 
         for rebecca_node in rebecca_nodes:
             await node_service.create_node_task(paneltype, tg, rebecca_node)

@@ -27,9 +27,14 @@ ACCEPTED = config("ACCEPTED", cast=bool, default=False)
 PANEL_USERNAME = config("PANEL_USERNAME", default="")
 PANEL_PASSWORD = config("PANEL_PASSWORD", default="")
 PANEL_ADDRESS = config("PANEL_ADDRESS", default="")
+def _parse_nodes_env(value: str | None) -> list[str] | None:
+    return [node.strip() for node in value.split(",") if node.strip()] if value else None
+
+
 PANEL_CUSTOM_NODES_ENV = config("PANEL_CUSTOM_NODES", default=None)
-PANEL_CUSTOM_NODES = PANEL_CUSTOM_NODES_ENV and [
-    x.strip() for x in PANEL_CUSTOM_NODES_ENV.split(",") if x.strip()] or None
+PANEL_CUSTOM_NODES = _parse_nodes_env(PANEL_CUSTOM_NODES_ENV)
+PANEL_EXCLUDE_NODES_ENV = config("PANEL_EXCLUDE_NODES", default=None)
+PANEL_EXCLUDE_NODES = _parse_nodes_env(PANEL_EXCLUDE_NODES_ENV)
 PANEL_NODE_RESET = config("PANEL_NODE_RESET", cast=int, default=8192)
 PANEL_TYPE = config("PANEL_TYPE", default="marzneshin")
 SYNC_WITH_PANEL = config("SYNC_WITH_PANEL", cast=bool, default=False)

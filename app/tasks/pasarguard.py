@@ -1,5 +1,11 @@
 import asyncio
-from app.config import PANEL_ADDRESS, PANEL_CUSTOM_NODES, PANEL_PASSWORD, PANEL_USERNAME
+from app.config import (
+    PANEL_ADDRESS,
+    PANEL_CUSTOM_NODES,
+    PANEL_EXCLUDE_NODES,
+    PANEL_PASSWORD,
+    PANEL_USERNAME,
+)
 from app.models.panel import Panel
 from app.service.check_service import CheckService
 from app.service.pg_node_service import TASKS, PGNodeService
@@ -25,6 +31,8 @@ async def start_pg_node_tasks():
 
     if PANEL_CUSTOM_NODES:
         pg_nodes = [m for m in pg_nodes if m.name in PANEL_CUSTOM_NODES]
+    if PANEL_EXCLUDE_NODES:
+        pg_nodes = [m for m in pg_nodes if m.name not in PANEL_EXCLUDE_NODES]
 
     async with asyncio.TaskGroup() as tg:
         for pg_node in pg_nodes:

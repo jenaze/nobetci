@@ -1,7 +1,7 @@
 import logging
 import ssl
 from ssl import SSLError
-from app.config import PANEL_CUSTOM_NODES, PANEL_NODE_RESET
+from app.config import PANEL_CUSTOM_NODES, PANEL_EXCLUDE_NODES, PANEL_NODE_RESET
 from app.models.panel import Panel
 from app.models.rebecca_node import RebeccaNode
 from app.notification.telegram import send_notification
@@ -128,13 +128,21 @@ class RebeccaService:
                     task.cancel()
                     tasks.remove(task)
 
-                (not PANEL_CUSTOM_NODES or 'core' in PANEL_CUSTOM_NODES) and asyncio.create_task(
-                    self.create_core_task(panel_data, tg))
+                if (not PANEL_CUSTOM_NODES or "core" in PANEL_CUSTOM_NODES) and (
+                    not PANEL_EXCLUDE_NODES or "core" not in PANEL_EXCLUDE_NODES
+                ):
+                    asyncio.create_task(self.create_core_task(panel_data, tg))
 
                 rebecca_nodes = await get_rebecca_nodes(panel_data)
                 if PANEL_CUSTOM_NODES:
                     rebecca_nodes = [
                         m for m in rebecca_nodes if m.name in PANEL_CUSTOM_NODES]
+                if PANEL_EXCLUDE_NODES:
+                    rebecca_nodes = [
+                        m
+                        for m in rebecca_nodes
+                        if m.name not in PANEL_EXCLUDE_NODES
+                    ]
                 for rebecca_node in rebecca_nodes:
                     asyncio.create_task(self.create_node_task(
                         panel_data, tg, rebecca_node))
