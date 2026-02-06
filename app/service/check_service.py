@@ -54,6 +54,7 @@ class CheckService:
 
         users = self._storage.get_users(user.name)
         active_connections = len(users)
+        connected_ip_addresses = list(dict.fromkeys(stored_user.ip for stored_user in users))
 
         if active_connections > user_limit and user.ip not in self._in_process_ips:
             userByEmail = self._storage.get_user(user.name)
@@ -92,6 +93,7 @@ class CheckService:
                 {
                     "username": user_to_notify.name,
                     "active_connections": active_connections,
+                    "connected_ips": connected_ip_addresses,
                 }
             )
 
