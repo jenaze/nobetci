@@ -18,6 +18,7 @@ API_PASSWORD=""
 FETCH_REPO="jenaze/nobetci"
 SCRIPT_URL="https://github.com/$FETCH_REPO/raw/main/script.sh"
 
+
 colorized_echo() {
     local color=$1
     local text=$2
