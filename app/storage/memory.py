@@ -27,9 +27,12 @@ class MemoryStorage(BaseStorage):
     def get_user_diff_ip(self,username:str,ip:str):
         return next((user for user in self.storage["users"] if user.name == username and ip != user.ip),None)
     
-    def delete_user(self,username:str,ip:str):
-        self.storage["users"] = list(filter(lambda u: u.name!=username and u.ip != ip, self.storage["users"]))
-        # self.storage["users"].remove(next(filter(lambda u: u.name!=username and u.ip != ip, self.storage["users"]),None))
+    def delete_user(self, username: str, ip: str):
+        self.storage["users"] = [
+            user
+            for user in self.storage["users"]
+            if not (user.name == username and user.ip == ip)
+        ]
         
     def nextCount(self,username:str,ip:str):
         user=next ((u for u in self.storage["users"] if u.name==username and u.ip!=ip),None)
