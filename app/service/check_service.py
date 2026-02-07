@@ -106,28 +106,21 @@ class CheckService:
 
             self._storage.delete_user(userByEmail.name, userByEmail.ip)
 
+            connected_ip_lines = "\n".join(unique_connected_ip_addresses)
             if BAN_ENABLED:
                 log_message = (
                     "banned user "
                     + userByEmail.name
-                    + " with ip "
-                    + userByEmail.ip
-                    + "\nnode: "
-                    + userByEmail.node
-                    + "\ninbound: "
-                    + userByEmail.inbound
+                    + "\nips:\n"
+                    + connected_ip_lines
                     + f"\nactive connections: {active_connections}"
                 )
             else:
                 log_message = (
                     "limit exceeded for user "
                     + userByEmail.name
-                    + " with ip "
-                    + userByEmail.ip
-                    + "\nnode: "
-                    + userByEmail.node
-                    + "\ninbound: "
-                    + userByEmail.inbound
+                    + "\nips:\n"
+                    + connected_ip_lines
                     + f"\nactive connections: {active_connections}"
                     + "\nwebhook sent"
                 )
